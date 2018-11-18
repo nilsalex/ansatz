@@ -29,6 +29,8 @@ library:
   source-dirs: src
   ghc-options:
   - -O2
+  default-extensions:
+  - BangPatterns
 
 executables:
   ansatz-exe:
@@ -41,6 +43,8 @@ executables:
     - -O2
     dependencies:
     - ansatz
+    default-extensions:
+    - BangPatterns
 
 tests:
   ansatz-test:
