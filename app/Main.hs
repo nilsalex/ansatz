@@ -15,4 +15,4 @@ main = do
          let gr = areaGroupRight
          let sorts = fmap permFromIndices $ Seq.sort $ Seq.fromList areaSorts
          let u = uniques' gl gr sorts
-         putStr $ unlines $ map (\(p, i) -> "to check: " ++ show i ++ "\t" ++ permuteIndices p "abcdef") u
+         putStr $ unlines $ map (\(p, i) -> "to check: " ++ show i ++ "\t" ++ permuteIndices p "abcdefghijkl") u
