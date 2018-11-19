@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 module PermOrbits where
 
 import Data.List (sort,nub)
@@ -10,11 +9,11 @@ import qualified Math.Algebra.Group.PermutationGroup as PG
 import qualified Math.Core.Utils as MCU
 import System.IO
 
-permuteIndices :: PG.Permutation Int -> [Char] -> [Char]
+permuteIndices :: PG.Permutation Int -> String -> String
 permuteIndices perm = map (PG..^ charPerm)
     where charPerm = PG.fmapP (chr . (+ 96)) perm
 
-permFromIndices :: [Char] -> PG.Permutation Int
+permFromIndices :: String -> PG.Permutation Int
 permFromIndices indices = PG.fromList positions
     where numbers = map ((+ (-96)) . ord) indices
           positions = map snd $ sort $ zip numbers [1..]
@@ -28,7 +27,7 @@ lrOrbit groupElem leftGroup rightGroup = S.fromList $ (\lp rp -> lp * groupElem 
 getPerm :: IO (PG.Permutation Int)
 getPerm = fmap PG.fromCycles readLn
 
-getInt :: IO (Int)
+getInt :: IO Int
 getInt = readLn
 
 metricGroupLeft :: [PG.Permutation Int]
