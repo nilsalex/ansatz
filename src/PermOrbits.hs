@@ -9,8 +9,18 @@ import qualified Math.Algebra.Group.PermutationGroup as PG
 import qualified Math.Core.Utils as MCU
 import System.IO
 
-permuteIndices :: PG.Permutation Int -> String -> String
-permuteIndices perm = map (PG..^ charPerm)
+data SignedPerm = SignedPerm (PG.Permutation Int) Int deriving (Ord, Eq, Show)
+
+instance Num SignedPerm where
+  (SignedPerm p1 s1) * (SignedPerm p2 s2) = SignedPerm (p1 * p2) (s1 * s2)
+  fromInteger 1 = SignedPerm (PG.fromCycles []) 1
+  _ + _ = undefined
+  negate _ = undefined
+  abs _ = undefined
+  signum _ = undefined
+
+permuteIndices :: SignedPerm -> String -> String
+permuteIndices (SignedPerm perm _) = map (PG..^ charPerm)
     where charPerm = PG.fmapP (chr . (+ 96)) perm
 
 permFromIndices :: String -> PG.Permutation Int
@@ -21,14 +31,8 @@ permFromIndices indices = PG.fromList positions
 {- given a left group and a right group, yields the
    "orbit" by acting with all elements from the left
    and from the right, respectively -}
-lrOrbit :: PG.Permutation Int -> [PG.Permutation Int] -> [PG.Permutation Int] -> S.Set (PG.Permutation Int)
+lrOrbit :: (Num a, Ord a) => a -> [a] -> [a] -> S.Set (a)
 lrOrbit groupElem leftGroup rightGroup = S.fromList $ (\lp rp -> lp * groupElem * rp) <$> leftGroup <*> rightGroup
-
-getPerm :: IO (PG.Permutation Int)
-getPerm = fmap PG.fromCycles readLn
-
-getInt :: IO Int
-getInt = readLn
 
 metricGroupLeft :: [PG.Permutation Int]
 metricGroupLeft = PG.elts $ map PG.fromCycles
@@ -36,12 +40,18 @@ metricGroupLeft = PG.elts $ map PG.fromCycles
 
 {- subgroup of the symmetric group which acts from the right,
    i.e. which permute the values of indices -}
-areaGroupLeft :: [PG.Permutation Int]
-areaGroupLeft = PG.elts $ map PG.fromCycles
+areaGroupLeft :: [SignedPerm]
+areaGroupLeft = PG.elts $ zipWith SignedPerm (map PG.fromCycles
                 [[[3, 4]], [[5, 6]], [[3, 5], [4, 6]],
                  [[9, 10]], [[11, 12]], [[9, 11], [10, 12]],
                  [[1, 2]], [[7, 8]],
-                 [[1, 7], [2, 8], [3, 9], [4, 10], [5, 11], [6, 12]]]
+                 [[1, 7], [2, 8], [3, 9], [4, 10], [5, 11], [6, 12]]])
+                 [-1, -1, 1, -1, -1, 1, 1, 1, 1]
+
+chrGroupLeft :: [SignedPerm]
+chrGroupLeft = PG.elts $ zipWith SignedPerm (map PG.fromCycles
+                 [[[1, 2]], [[3, 4]], [[5, 6]], [[3, 5], [4, 6]]])
+                 [1, -1, -1, 1]
 
 metricGroupRight :: [PG.Permutation Int]
 metricGroupRight = PG.elts $ map PG.fromCycles
@@ -49,29 +59,34 @@ metricGroupRight = PG.elts $ map PG.fromCycles
 
 {- subgroup of the symmetric group which acts from the left,
    i.e. which permute the positions of indices -}
-areaGroupRight :: [PG.Permutation Int]
-areaGroupRight = PG.elts $ map PG.fromCycles
+areaGroupRight :: [SignedPerm]
+areaGroupRight = PG.elts $ zipWith SignedPerm (map PG.fromCycles
                 [[[1, 2]], [[3, 4]], [[1, 3], [2, 4]],
                  [[5, 6]], [[7, 8]], [[5, 7], [6, 8]],
                  [[9, 10]], [[11, 12]], [[9, 11], [10, 12]],
                  [[1, 5], [2, 6], [3, 7], [4, 8]],
                  [[1, 9], [2, 10], [3, 11], [4, 12]],
-                 [[5, 9], [6, 10], [7, 11], [8, 12]]]
+                 [[5, 9], [6, 10], [7, 11], [8, 12]]])
+                 [-1, -1, 1, -1, -1, 1, -1, -1, 1, 1, 1, 1]
+
+chrGroupRight :: [SignedPerm]
+chrGroupRight = PG.elts $ zipWith SignedPerm (map PG.fromCycles
+                [[[3, 4]], [[5, 6]], [[3, 5], [4, 6]]])
+                 [-1, -1, 1]
 
 {- given a group of left permutations, a group of right permutations,
    and a sequence of input permutations,
    yield representatives of the quotient
    input permutations / left and right action of left and right permutation group -}
 uniques :: [PG.Permutation Int] -> [PG.Permutation Int] ->
-           Seq.Seq (PG.Permutation Int) -> [(PG.Permutation Int, Int)]
+           Seq.Seq (PG.Permutation Int) -> [PG.Permutation Int]
 uniques gl gr right
-    | Seq.length right < 2 = zip (toList right) $ repeat 0
+    | Seq.length right < 2 = toList right
     | otherwise        =
         let perm = right `Seq.index` 0
             orbit' = lrOrbit perm gl gr
             right' = Seq.filter (not . (`S.member` orbit')) $ Seq.deleteAt 0 right
-            remaining = Seq.length right'
-        in (perm, remaining) : uniques gl gr right'
+        in perm : uniques gl gr right'
 
 {- same as uniques, but with additional counter of remaining permutations to check -}
 uniques' :: [PG.Permutation Int] -> [PG.Permutation Int] ->
@@ -83,4 +98,4 @@ uniques' gl gr right
             orbit' = lrOrbit perm gl gr
             right' = Seq.filter (not . (`S.member` orbit')) $ Seq.deleteAt 0 right
             remaining = Seq.length right'
-        in (perm, remaining) : uniques gl gr right'
+        in (perm, remaining) : uniques' gl gr right'

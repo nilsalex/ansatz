@@ -1,5 +1,5 @@
 module Topsorts
-    ( metricSorts, areaSorts
+    ( metricSorts, areaSorts, chrSorts, areaSorts'
     ) where
 
 import Data.Char
@@ -12,6 +12,16 @@ metricSorted [i1, i2, i3, i4, i5, i6] = i2 < i3 && i5 < i6 && i1 < i4
 areaSorted :: Ord a => [a] -> Bool
 areaSorted [i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12] =
     i1 < i2 && i7 < i8 && i3 < i4 && i5 < i6 && i3 < i5 && i9 < i10 && i11 < i12 && i9 < i11 && i1 < i7
+
+areaSorted' :: Ord a => [a] -> Bool
+areaSorted' [i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16] =
+    i1 < i2 && i3 < i4 && i1 < i3 &&
+    i5 < i6 && i7 < i8 && i5 < i7 && i9 < i10 &&
+    i11 < i12 && i13 < i14 && i11 < i13 && i15 < i16 &&
+    i5 < i11
+
+chrSorted :: Ord a => [a] -> Bool
+chrSorted [i1, i2, i3, i4, i5, i6] = i1 < i2 && i3 < i4 && i5 < i6 && i3 < i5
 
 metricCanonical :: [Int] -> Bool
 metricCanonical xs = i1 < i2 && i3 < i4 && i5 < i6 && i1 < i3 && i1 < i5 && i3 < i5
@@ -40,6 +50,14 @@ areaCanonical xs = i1 < i2 && i3 < i4 && i5 < i6 && i7 < i8 && i9 < i10 && i11 <
           i10 = imap IM.! 10
           i11 = imap IM.! 11
           i12 = imap IM.! 12
+
+chrCanonical :: [Int] -> Bool
+chrCanonical xs = i3 < i4 && i5 < i6 && i3 < i5
+    where imap = IM.fromList $ zip xs [0..]
+          i3 = imap IM.! 3
+          i4 = imap IM.! 4
+          i5 = imap IM.! 5
+          i6 = imap IM.! 6
 
 isAreaPair :: Int -> Int -> Bool
 isAreaPair a b = diff == 1 && modulus == 1
@@ -74,4 +92,10 @@ metricSorts :: [String]
 metricSorts = map (map (chr . (96+))) . filter metricCanonical $ topsorts 6 metricSorted
 
 areaSorts :: [String]
-areaSorts = map (map (chr . (96+))) . filter (not . areaZero) . filter areaCanonical $ topsorts 12 areaSorted
+areaSorts = map (map (chr . (96+))) . filter areaCanonical $ topsorts 12 areaSorted
+
+areaSorts' :: [String]
+areaSorts' = map (map (chr . (96+))) $ topsorts 16 areaSorted'
+
+chrSorts :: [String]
+chrSorts = map (map (chr . (96+))) . filter chrCanonical $ topsorts 6 chrSorted
